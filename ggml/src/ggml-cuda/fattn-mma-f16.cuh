@@ -374,7 +374,7 @@ static __device__ __forceinline__ void flash_attn_ext_f16_load_tile(
     constexpr int h2_per_chunk = 16/sizeof(half2);
     const int chunks_per_row = D2 / h2_per_chunk;
     if constexpr (use_cp_async) {
-        static_assert(warp_size == 32, "bad warp_size");
+        static_assert(!use_cp_async || warp_size == 32, "bad warp_size");
         static_assert(!oob_check || use_sparse, "OOB check not compatible with cp_async");
         constexpr int preload = 64;
 

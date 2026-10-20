@@ -1,10 +1,14 @@
+#ifdef GGML_USE_HIP
+#include <cassert>
+#include <hip/hip_runtime.h>
+#include <hip/hip_cooperative_groups.h>
+#endif
+
 #include "common.cuh"
 #include "ggml.h"
 #include "softmax.cuh"
 
-#ifdef GGML_USE_HIP
-#include <hip/hip_cooperative_groups.h>
-#else
+#ifndef GGML_USE_HIP
 #include <cooperative_groups.h>
 #include <cooperative_groups/reduce.h>
 #endif // GGML_USE_HIP
@@ -284,7 +288,7 @@ static void launch_soft_max_kernels(const float * x, const T * mask, const float
 
     auto launch_kernel = [=](auto I) -> bool {
         constexpr int ncols = decltype(I)::value;
-        constexpr int block = (ncols > 1024 ? 1024 : ncols);
+        constexpr int block = (ncols > CUDA_SOFT_MAX_BLOCK_SIZE ? CUDA_SOFT_MAX_BLOCK_SIZE : ncols);
 
         if (p.ncols == ncols) {
             CUDA_SET_SHARED_MEMORY_LIMIT((soft_max_f32<true, ncols, block, T>), smpbo);
